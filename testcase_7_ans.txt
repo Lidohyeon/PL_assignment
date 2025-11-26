@@ -1,0 +1,10 @@
+operand1 := 2 ;
+ID: 1; CONST: 1; OP: 0;
+(OK)
+operand2 := operand1 * 3 ;
+ID: 2; CONST: 1; OP: 1;
+(Warning) "Substituting assignment operator (:=)"
+target := operand1 + operand2 * 3
+ID: 3; CONST: 1; OP: 2;
+(OK)
+Result ==> operand1: 2; operand2: 6; target: 20;

@@ -1,0 +1,14 @@
+Value1 := 1;
+ID: 1; CONST: 1; OP: 0;
+(OK)
+AddResult := Value1 + Value2;
+ID: 3; CONST: 0; OP: 1;
+(Error) "referring to undefined identifiers(Value2)"
+MinusResult := Value1 - 3;
+ID: 2; CONST: 1; OP: 1;
+(Warning) "Substituting assignment operator (:=)"
+(Warning) "Eliminating duplicate operator (-)"
+MultiplyResult := Value1 * (Value1 + 1)
+ID: 3; CONST: 1; OP: 2;
+(OK)
+Result ==> Value1: 1; AddResult: Unknown; Value2: Unknown; MinusResult: -2; MultiplyResult: 2;

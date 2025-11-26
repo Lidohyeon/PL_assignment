@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "C/C++ Runner: Debug Session",
+      "type": "lldb",
+      "request": "launch",
+      "args": [],
+      "cwd": "/Users/imdohyeon/Desktop/2-2/프밍언/Assignment1_testcases_updated/제출물",
+      "program": "/Users/imdohyeon/Desktop/2-2/프밍언/Assignment1_testcases_updated/제출물/build/Debug/outDebug"
+    }
+  ]
+}
