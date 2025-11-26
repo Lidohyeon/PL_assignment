@@ -564,6 +564,39 @@ void extractCurrentStatement(char *original_line, int start_token, int end_token
     }
 }
 
+// Remove whitespace that appears immediately before a semicolon to match
+// the expected output format (e.g., "a := 3 ;" -> "a := 3;").
+void trimSpaceBeforeSemicolon(char *stmt)
+{
+    int len = strlen(stmt);
+    int write = 0;
+
+    for (int read = 0; read < len; read++)
+    {
+        if (stmt[read] == ';')
+        {
+            // 뒤쪽 공백은 유지하지만 세미콜론 바로 앞 공백은 제거
+            while (write > 0 && isspace((unsigned char)stmt[write - 1]))
+            {
+                write--;
+            }
+            stmt[write++] = ';';
+        }
+        else
+        {
+            stmt[write++] = stmt[read];
+        }
+    }
+
+    stmt[write] = '\0';
+
+    // 마지막에 남아있는 불필요한 공백 제거
+    while (write > 0 && isspace((unsigned char)stmt[write - 1]))
+    {
+        stmt[--write] = '\0';
+    }
+}
+
 void checkMoreStatements()
 {
     if (symbol_current < symbol_count && getCurrentToken()->symbol_type == SEMI_COLON)
@@ -739,25 +772,31 @@ void parseStatements()
     // 현재 statement 추출
     extractCurrentStatement(line, statement_start, statement_end);
 
-    // 중복 연산자가 있는 경우 current_statement에서 제거
-    for (int i = 0; i < opWarningCount; i++)
-    {
-        if (opWarningCode[i] >= 1 && opWarningCode[i] <= 4)
-        {
-            removeDuplicateOperators(current_statement);
-            break; // 한 번만 실행
-        }
-    }
+    // 출력 형식에 맞게 세미콜론 앞의 공백을 제거
+    trimSpaceBeforeSemicolon(current_statement);
 
-    // assignment operator 치환이 필요한 경우
-    for (int i = 0; i < opWarningCount; i++)
-    {
-        if (opWarningCode[i] == 5)
-        {
-            substituteAssignmentOperator(current_statement);
-            break; // 한 번만 실행
-        }
-    }
+            // 중복 연산자가 있는 경우 current_statement에서 제거
+            for (int i = 0; i < opWarningCount; i++)
+            {
+                if (opWarningCode[i] >= 1 && opWarningCode[i] <= 4)
+                {
+                    removeDuplicateOperators(current_statement);
+                    break; // 한 번만 실행
+                }
+            }
+
+            // assignment operator 치환이 필요한 경우
+            for (int i = 0; i < opWarningCount; i++)
+            {
+                if (opWarningCode[i] == 5)
+                {
+                    substituteAssignmentOperator(current_statement);
+                    break; // 한 번만 실행
+                }
+            }
+
+            // 출력 형식에 맞게 세미콜론 앞의 공백을 제거
+            trimSpaceBeforeSemicolon(current_statement);
 
     printResultByLine(current_statement, statementIdCount, statementConstCount, statementOpCount);
 

@@ -1,5 +1,5 @@
 ﻿Name,Language,Result1,Result2,Result3,Result4,Result5,Result6,Result7,Result8,Result9,Result10,Score1,Score2,Score3,Score4,Score5,Score6,Score7,Score8,Score9,Score10,SUM
-20225143,C,"operand1 := 3;
+20224264,C,"operand1 := 3;
 ID: 1; CONST: 1; OP: 0;
 (OK)
 operand2 := operand1 + 2;
