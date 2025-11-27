@@ -772,28 +772,28 @@ void parseStatements()
     // 출력 형식에 맞게 세미콜론 앞의 공백을 제거
     trimSpaceBeforeSemicolon(current_statement);
 
-            // 중복 연산자가 있는 경우 current_statement에서 제거
-            for (int i = 0; i < opWarningCount; i++)
-            {
-                if (opWarningCode[i] >= 1 && opWarningCode[i] <= 4)
-                {
-                    removeDuplicateOperators(current_statement);
-                    break; // 한 번만 실행
-                }
-            }
+    // 중복 연산자가 있는 경우 current_statement에서 제거
+    for (int i = 0; i < opWarningCount; i++)
+    {
+        if (opWarningCode[i] >= 1 && opWarningCode[i] <= 4)
+        {
+            removeDuplicateOperators(current_statement);
+            break; // 한 번만 실행
+        }
+    }
 
-            // assignment operator 치환이 필요한 경우
-            for (int i = 0; i < opWarningCount; i++)
-            {
-                if (opWarningCode[i] == 5)
-                {
-                    substituteAssignmentOperator(current_statement);
-                    break; // 한 번만 실행
-                }
-            }
+    // assignment operator 치환이 필요한 경우
+    for (int i = 0; i < opWarningCount; i++)
+    {
+        if (opWarningCode[i] == 5)
+        {
+            substituteAssignmentOperator(current_statement);
+            break; // 한 번만 실행
+        }
+    }
 
-            // 출력 형식에 맞게 세미콜론 앞의 공백을 제거
-            trimSpaceBeforeSemicolon(current_statement);
+    // 출력 형식에 맞게 세미콜론 앞의 공백을 제거
+    trimSpaceBeforeSemicolon(current_statement);
 
     printResultByLine(current_statement, statementIdCount, statementConstCount, statementOpCount);
 
@@ -803,9 +803,9 @@ void parseStatements()
         checkMoreStatements();
         if (fgets(line, sizeof(line), file) != NULL)
         {
-        parseStatements();
+            parseStatements();
+        }
     }
-}
     else if (error_occured)
     {
         printIDError(errorIdName);
@@ -848,6 +848,8 @@ void parseStatement()
     opWarningCount = 0;
     error_count = 0;
 
+    int idIndex;
+
     Symbol *sym = getCurrentToken();
 
     if (sym->symbol_type != IDENTIFIER)
@@ -876,6 +878,8 @@ void parseStatement()
             {
                 sprintf(id->value, "%s", "Unknown");
             }
+            idIndex = getIdIndex(id->name);
+            undefinedHandled[idIndex] = true;
             return;
         }
         else
@@ -890,6 +894,8 @@ void parseStatement()
             {
                 sprintf(id->value, "%s", "Unknown");
             }
+            idIndex = getIdIndex(id->name);
+            undefinedHandled[idIndex] = true;
             return;
         }
     }
@@ -906,6 +912,8 @@ void parseStatement()
         {
             sprintf(id->value, "%s", "Unknown");
         } // 정수를 문자열로 변환하여 할당
+        idIndex = getIdIndex(id->name);
+        undefinedHandled[idIndex] = true;
         return;
     }
     else
