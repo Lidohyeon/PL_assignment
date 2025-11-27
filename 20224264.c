@@ -92,6 +92,7 @@ int idArray_count;
 int statementIdCount;
 int statementOpCount;
 int statementConstCount;
+bool rhsHasUnknownInStatement;
 
 bool error_occured;
 int error_count;
@@ -847,6 +848,7 @@ void parseStatement()
     opWarnigCode = 0;
     opWarningCount = 0;
     error_count = 0;
+    rhsHasUnknownInStatement = false;
 
     int idIndex;
 
@@ -870,7 +872,7 @@ void parseStatement()
         {
             moveToNextToken();
             int result = parseExpression();
-            if (error_occured == false)
+            if (error_occured == false && rhsHasUnknownInStatement == false)
             {                                     // 반환값을 변수에 저장
                 sprintf(id->value, "%d", result); // 정수를 문자열로 변환하여 할당
             }
@@ -886,7 +888,7 @@ void parseStatement()
         {
             opWarningCode[opWarningCount++] = 5;
             int result = parseExpression(); // 반환값을 변수에 저장
-            if (error_occured == false)
+            if (error_occured == false && rhsHasUnknownInStatement == false)
             {                                     // 반환값을 변수에 저장
                 sprintf(id->value, "%d", result); // 정수를 문자열로 변환하여 할당
             }
@@ -904,7 +906,7 @@ void parseStatement()
         opWarningCode[opWarningCount++] = 5;
         moveToNextToken();
         int result = parseExpression(); // 반환값 = parseExpression();   // 반환값을 변수에 저장
-        if (error_occured == false)
+        if (error_occured == false && rhsHasUnknownInStatement == false)
         {                                     // 반환값을 변수에 저장
             sprintf(id->value, "%d", result); // 정수를 문자열로 변환하여 할당
         }
@@ -1023,7 +1025,14 @@ int parseFactor()
         statementIdCount++;
         Ident *id = isExistId(*getCurrentToken());
         int idIndex = getIdIndex(id->name);
-        if ((strlen(id->value) == 0 || strcmp(id->value, "Unknown") == 0) &&
+        bool valueIsUnknown = (strlen(id->value) == 0 || strcmp(id->value, "Unknown") == 0);
+
+        if (valueIsUnknown)
+        {
+            rhsHasUnknownInStatement = true;
+        }
+
+        if (valueIsUnknown &&
             idIndex >= 0 && undefinedHandled[idIndex] == false)
         {
             errorIdName = id->name;
