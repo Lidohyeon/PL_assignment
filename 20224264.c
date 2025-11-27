@@ -78,6 +78,8 @@ typedef struct
  * =============== GLOBAL VARIABLES SECTION =================
  *********Declare only global variables here****************/
 Symbol symbolArray[256];
+int symbol_pos[256];
+int symbol_len[256];
 int symbol_count;
 int symbol_current;
 char lexeme[100];
@@ -107,6 +109,7 @@ char *errorIdName;
 char line[1024];
 FILE *file;
 Ident idArray[256];
+bool undefinedHandled[256];
 
 char current_statement[1024];
 
@@ -318,6 +321,18 @@ Ident *isExistId(Symbol symbol) // id 중에 있는지 확인 및 그 id반환
     return NULL;
 }
 
+int getIdIndex(const char *name)
+{
+    for (int i = 0; i < idArray_count; i++)
+    {
+        if (strcmp(idArray[i].name, name) == 0)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
 void createIdArray()
 {
     for (int i = 0; i < symbol_count; i++)
@@ -329,6 +344,7 @@ void createIdArray()
             {
                 strcpy(idArray[idArray_count].name, symbolArray[i].id_name);
                 strcpy(idArray[idArray_count].value, "Unknown"); // 초기값 설정
+                undefinedHandled[idArray_count] = false;
                 idArray_count++;
             }
         }
@@ -354,20 +370,26 @@ void lexical_analysis()
             continue;
         }
 
+        int token_start = line_curr - 1;
+
         /* Operators / single-character tokens */
         if (lookup(ch) != 0)
         {
             int sym = lookup(ch);
+            int token_length = 1;
             /* If assignment operator ":=", lookup checked next char; consume it here */
             if (ch == ':' && getNextChar() == '=')
             {
                 /* consume '=' so next getChar progresses past it */
                 getChar();
+                token_length = 2;
             }
             else if (ch == '=')
             {
                 lookup(ch);
             }
+            symbol_pos[symbol_count] = token_start;
+            symbol_len[symbol_count] = token_length;
             symbolArray[symbol_count++].symbol_type = sym;
             ch = getChar();
             continue;
@@ -393,6 +415,8 @@ void lexical_analysis()
             strcpy(lex_id_name, lexeme);
             memset(lexeme, 0, sizeof(lexeme));
 
+            symbol_pos[symbol_count] = token_start;
+            symbol_len[symbol_count] = lexLen;
             symbolArray[symbol_count].symbol_type = IDENTIFIER;
             strcpy(symbolArray[symbol_count++].id_name, lex_id_name);
 
@@ -418,6 +442,8 @@ void lexical_analysis()
             int value = (int)strtol(lexeme, NULL, 10);
 
             /* store symbol */
+            symbol_pos[symbol_count] = token_start;
+            symbol_len[symbol_count] = lexLen;
             symbolArray[symbol_count].symbol_type = CONST;
             symbolArray[symbol_count].const_value = value;
             symbol_count++;
@@ -435,6 +461,10 @@ void lexical_analysis()
 void parseProgram()
 {
     idArray_count = 0;
+    for (int i = 0; i < 256; i++)
+    {
+        undefinedHandled[i] = false;
+    }
     parseStatements();
     printIdent(idArray_count);
 }
@@ -543,24 +573,74 @@ void findStatementPosition(char *original_line, int start_token, int end_token)
 
 void extractCurrentStatement(char *original_line, int start_token, int end_token)
 {
-    findStatementPosition(original_line, start_token, end_token);
+    if (start_token < 0 || end_token < start_token || end_token >= symbol_count)
+    {
+        current_statement[0] = '\0';
+        return;
+    }
 
-    int statement_len = statement_end_pos - statement_start_pos + 1;
+    int start_pos = symbol_pos[start_token];
+    int end_pos = symbol_pos[end_token] + symbol_len[end_token] - 1;
+
+    // 안전 장치
+    if (start_pos < 0)
+        start_pos = 0;
+    int line_len = strlen(original_line);
+    if (end_pos >= line_len)
+        end_pos = line_len - 1;
+
+    // 앞뒤 공백 제거
+    while (start_pos <= end_pos && isspace((unsigned char)original_line[start_pos]))
+    {
+        start_pos++;
+    }
+    while (end_pos >= start_pos && isspace((unsigned char)original_line[end_pos]))
+    {
+        end_pos--;
+    }
+
+    int statement_len = end_pos - start_pos + 1;
     if (statement_len > 0 && statement_len < 1024)
     {
-        strncpy(current_statement, original_line + statement_start_pos, statement_len);
+        strncpy(current_statement, original_line + start_pos, statement_len);
         current_statement[statement_len] = '\0';
-
-        // 끝에서 공백 제거
-        int len = strlen(current_statement);
-        while (len > 0 && isspace(current_statement[len - 1]))
-        {
-            current_statement[--len] = '\0';
-        }
     }
     else
     {
         current_statement[0] = '\0';
+    }
+}
+
+// Remove whitespace that appears immediately before a semicolon to match
+// the expected output format (e.g., "a := 3 ;" -> "a := 3;").
+void trimSpaceBeforeSemicolon(char *stmt)
+{
+    int len = strlen(stmt);
+    int write = 0;
+
+    for (int read = 0; read < len; read++)
+    {
+        if (stmt[read] == ';')
+        {
+            // 뒤쪽 공백은 유지하지만 세미콜론 바로 앞 공백은 제거
+            while (write > 0 && isspace((unsigned char)stmt[write - 1]))
+            {
+                write--;
+            }
+            stmt[write++] = ';';
+        }
+        else
+        {
+            stmt[write++] = stmt[read];
+        }
+    }
+
+    stmt[write] = '\0';
+
+    // 마지막에 남아있는 불필요한 공백 제거
+    while (write > 0 && isspace((unsigned char)stmt[write - 1]))
+    {
+        stmt[--write] = '\0';
     }
 }
 
@@ -590,59 +670,11 @@ void checkMoreStatements()
                 statement_end = symbol_count - 1; // 마지막 토큰까지
             }
 
-            // 현재 statement 추출 - 토큰 기반이 아닌 직접 추출
-            // 원본 라인에서 두 번째 statement 부분을 찾기
-            char temp_statement[1024];
-            int semicolon_pos = -1;
-            int len = strlen(line);
+            // 토큰 위치를 기반으로 현재 statement를 추출
+            extractCurrentStatement(line, statement_start, statement_end);
 
-            // 첫 번째 세미콜론 위치 찾기
-            for (int i = 0; i < len; i++)
-            {
-                if (line[i] == ';')
-                {
-                    semicolon_pos = i;
-                    break;
-                }
-            }
-
-            if (semicolon_pos != -1 && semicolon_pos + 1 < len)
-            {
-                // 첫 번째 세미콜론 다음부터 시작
-                int start_pos = semicolon_pos + 1;
-
-                // 공백 건너뛰기
-                while (start_pos < len && isspace(line[start_pos]))
-                {
-                    start_pos++;
-                }
-
-                // 두 번째 세미콜론이나 끝까지 찾기
-                int end_pos = len - 1;
-                for (int i = start_pos; i < len; i++)
-                {
-                    if (line[i] == ';')
-                    {
-                        end_pos = i;
-                        break;
-                    }
-                }
-
-                // statement 추출
-                int stmt_len = end_pos - start_pos + 1;
-                if (stmt_len > 0 && stmt_len < 1024)
-                {
-                    strncpy(current_statement, line + start_pos, stmt_len);
-                    current_statement[stmt_len] = '\0';
-
-                    // 끝의 공백 제거
-                    int cs_len = strlen(current_statement);
-                    while (cs_len > 0 && isspace(current_statement[cs_len - 1]))
-                    {
-                        current_statement[--cs_len] = '\0';
-                    }
-                }
-            }
+            // 출력 형식에 맞게 세미콜론 앞의 공백을 제거
+            trimSpaceBeforeSemicolon(current_statement);
 
             // 중복 연산자가 있는 경우 current_statement에서 제거
             for (int i = 0; i < opWarningCount; i++)
@@ -664,14 +696,12 @@ void checkMoreStatements()
                 }
             }
 
+            // 출력 형식에 맞게 세미콜론 앞의 공백을 제거
+            trimSpaceBeforeSemicolon(current_statement);
+
             printResultByLine(current_statement, statementIdCount, statementConstCount, statementOpCount);
 
-            // 에러가 2개 이상이면 printOK() 호출
-            if (error_count >= 2)
-            {
-                printOK();
-            }
-            else if (error_occured == false && opWarningCount == 0)
+            if (error_occured == false && opWarningCount == 0)
             {
                 printOK();
             }
@@ -739,47 +769,43 @@ void parseStatements()
     // 현재 statement 추출
     extractCurrentStatement(line, statement_start, statement_end);
 
-    // 중복 연산자가 있는 경우 current_statement에서 제거
-    for (int i = 0; i < opWarningCount; i++)
-    {
-        if (opWarningCode[i] >= 1 && opWarningCode[i] <= 4)
-        {
-            removeDuplicateOperators(current_statement);
-            break; // 한 번만 실행
-        }
-    }
+    // 출력 형식에 맞게 세미콜론 앞의 공백을 제거
+    trimSpaceBeforeSemicolon(current_statement);
 
-    // assignment operator 치환이 필요한 경우
-    for (int i = 0; i < opWarningCount; i++)
-    {
-        if (opWarningCode[i] == 5)
-        {
-            substituteAssignmentOperator(current_statement);
-            break; // 한 번만 실행
-        }
-    }
+            // 중복 연산자가 있는 경우 current_statement에서 제거
+            for (int i = 0; i < opWarningCount; i++)
+            {
+                if (opWarningCode[i] >= 1 && opWarningCode[i] <= 4)
+                {
+                    removeDuplicateOperators(current_statement);
+                    break; // 한 번만 실행
+                }
+            }
+
+            // assignment operator 치환이 필요한 경우
+            for (int i = 0; i < opWarningCount; i++)
+            {
+                if (opWarningCode[i] == 5)
+                {
+                    substituteAssignmentOperator(current_statement);
+                    break; // 한 번만 실행
+                }
+            }
+
+            // 출력 형식에 맞게 세미콜론 앞의 공백을 제거
+            trimSpaceBeforeSemicolon(current_statement);
 
     printResultByLine(current_statement, statementIdCount, statementConstCount, statementOpCount);
 
-    // 에러가 2개 이상이면 printOK() 호출
-    if (error_count >= 2)
+    if (error_occured == false && opWarningCount == 0)
     {
         printOK();
         checkMoreStatements();
         if (fgets(line, sizeof(line), file) != NULL)
         {
-            parseStatements();
-        }
+        parseStatements();
     }
-    else if (error_occured == false && opWarningCount == 0)
-    {
-        printOK();
-        checkMoreStatements();
-        if (fgets(line, sizeof(line), file) != NULL)
-        {
-            parseStatements();
-        }
-    }
+}
     else if (error_occured)
     {
         printIDError(errorIdName);
@@ -988,11 +1014,14 @@ int parseFactor()
     {
         statementIdCount++;
         Ident *id = isExistId(*getCurrentToken());
-        if (strlen(id->value) == 0 || strcmp(id->value, "Unknown") == 0)
+        int idIndex = getIdIndex(id->name);
+        if ((strlen(id->value) == 0 || strcmp(id->value, "Unknown") == 0) &&
+            idIndex >= 0 && undefinedHandled[idIndex] == false)
         {
             errorIdName = id->name;
             error_occured = true;
             error_count++;
+            undefinedHandled[idIndex] = true;
             moveToNextToken();
             return 0;
         }

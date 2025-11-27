@@ -1,7 +1,10 @@
-operand2 := operand1 + 2;
+a := 1;
+ID: 1; CONST: 1; OP: 0;
+(OK)
+b := a + 2;
 ID: 2; CONST: 1; OP: 1;
-(Error) "referring to undefined identifiers(operand1)"
-target := operand1 + operand2 * 3
+(OK)
+c := b + a + 3;
 ID: 3; CONST: 1; OP: 2;
 (OK)
-Result ==> operand2: Unknown; operand1: Unknown; target: Unknown;
+Result ==> a: 1; b: 3; c: 7;
