@@ -109,6 +109,7 @@ char *errorIdName;
 char line[1024];
 FILE *file;
 Ident idArray[256];
+bool undefinedHandled[256];
 
 char current_statement[1024];
 
@@ -320,6 +321,18 @@ Ident *isExistId(Symbol symbol) // id 중에 있는지 확인 및 그 id반환
     return NULL;
 }
 
+int getIdIndex(const char *name)
+{
+    for (int i = 0; i < idArray_count; i++)
+    {
+        if (strcmp(idArray[i].name, name) == 0)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
 void createIdArray()
 {
     for (int i = 0; i < symbol_count; i++)
@@ -331,6 +344,7 @@ void createIdArray()
             {
                 strcpy(idArray[idArray_count].name, symbolArray[i].id_name);
                 strcpy(idArray[idArray_count].value, "Unknown"); // 초기값 설정
+                undefinedHandled[idArray_count] = false;
                 idArray_count++;
             }
         }
@@ -447,6 +461,10 @@ void lexical_analysis()
 void parseProgram()
 {
     idArray_count = 0;
+    for (int i = 0; i < 256; i++)
+    {
+        undefinedHandled[i] = false;
+    }
     parseStatements();
     printIdent(idArray_count);
 }
@@ -683,12 +701,7 @@ void checkMoreStatements()
 
             printResultByLine(current_statement, statementIdCount, statementConstCount, statementOpCount);
 
-            // 에러가 2개 이상이면 printOK() 호출
-            if (error_count >= 2)
-            {
-                printOK();
-            }
-            else if (error_occured == false && opWarningCount == 0)
+            if (error_occured == false && opWarningCount == 0)
             {
                 printOK();
             }
@@ -784,25 +797,15 @@ void parseStatements()
 
     printResultByLine(current_statement, statementIdCount, statementConstCount, statementOpCount);
 
-    // 에러가 2개 이상이면 printOK() 호출
-    if (error_count >= 2)
+    if (error_occured == false && opWarningCount == 0)
     {
         printOK();
         checkMoreStatements();
         if (fgets(line, sizeof(line), file) != NULL)
         {
-            parseStatements();
-        }
+        parseStatements();
     }
-    else if (error_occured == false && opWarningCount == 0)
-    {
-        printOK();
-        checkMoreStatements();
-        if (fgets(line, sizeof(line), file) != NULL)
-        {
-            parseStatements();
-        }
-    }
+}
     else if (error_occured)
     {
         printIDError(errorIdName);
@@ -1011,11 +1014,14 @@ int parseFactor()
     {
         statementIdCount++;
         Ident *id = isExistId(*getCurrentToken());
-        if (strlen(id->value) == 0 || strcmp(id->value, "Unknown") == 0)
+        int idIndex = getIdIndex(id->name);
+        if ((strlen(id->value) == 0 || strcmp(id->value, "Unknown") == 0) &&
+            idIndex >= 0 && undefinedHandled[idIndex] == false)
         {
             errorIdName = id->name;
             error_occured = true;
             error_count++;
+            undefinedHandled[idIndex] = true;
             moveToNextToken();
             return 0;
         }
