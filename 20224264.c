@@ -92,6 +92,7 @@ int idArray_count;
 int statementIdCount;
 int statementOpCount;
 int statementConstCount;
+bool rhsHasUnknownInStatement;
 
 bool error_occured;
 int error_count;
@@ -322,6 +323,18 @@ Ident *isExistId(Symbol symbol) // id 중에 있는지 확인 및 그 id반환
         return NULL;
     }
     return NULL;
+}
+
+int getIdIndex(const char *name)
+{
+    for (int i = 0; i < idArray_count; i++)
+    {
+        if (strcmp(idArray[i].name, name) == 0)
+        {
+            return i;
+        }
+    }
+    return -1;
 }
 
 int getIdIndex(const char *name)
@@ -966,6 +979,9 @@ void parseStatement()
     opWarnigCode = 0;
     opWarningCount = 0;
     error_count = 0;
+    rhsHasUnknownInStatement = false;
+
+    int idIndex;
 
     Symbol *sym = getCurrentToken();
 
@@ -992,7 +1008,7 @@ void parseStatement()
         {
             moveToNextToken();
             int result = parseExpression();
-            if (error_occured == false)
+            if (error_occured == false && rhsHasUnknownInStatement == false)
             {                                     // 반환값을 변수에 저장
                 sprintf(id->value, "%d", result); // 정수를 문자열로 변환하여 할당
             }
@@ -1000,13 +1016,15 @@ void parseStatement()
             {
                 sprintf(id->value, "%s", "Unknown");
             }
+            idIndex = getIdIndex(id->name);
+            undefinedHandled[idIndex] = true;
             return;
         }
         else
         {
             opWarningCode[opWarningCount++] = 5;
             int result = parseExpression(); // 반환값을 변수에 저장
-            if (error_occured == false)
+            if (error_occured == false && rhsHasUnknownInStatement == false)
             {                                     // 반환값을 변수에 저장
                 sprintf(id->value, "%d", result); // 정수를 문자열로 변환하여 할당
             }
@@ -1014,6 +1032,8 @@ void parseStatement()
             {
                 sprintf(id->value, "%s", "Unknown");
             }
+            idIndex = getIdIndex(id->name);
+            undefinedHandled[idIndex] = true;
             return;
         }
     }
@@ -1022,7 +1042,7 @@ void parseStatement()
         opWarningCode[opWarningCount++] = 5;
         moveToNextToken();
         int result = parseExpression(); // 반환값 = parseExpression();   // 반환값을 변수에 저장
-        if (error_occured == false)
+        if (error_occured == false && rhsHasUnknownInStatement == false)
         {                                     // 반환값을 변수에 저장
             sprintf(id->value, "%d", result); // 정수를 문자열로 변환하여 할당
         }
@@ -1030,6 +1050,8 @@ void parseStatement()
         {
             sprintf(id->value, "%s", "Unknown");
         } // 정수를 문자열로 변환하여 할당
+        idIndex = getIdIndex(id->name);
+        undefinedHandled[idIndex] = true;
         return;
     }
     else

@@ -1,5 +1,73 @@
 ﻿Name,Language,Result1,Result2,Result3,Result4,Result5,Result6,Result7,Result8,Result9,Result10,Score1,Score2,Score3,Score4,Score5,Score6,Score7,Score8,Score9,Score10
-20225143,C,"operand1 := 3;
+20224264,C,"operand1 := 12;
+ID: 1; CONST: 1; OP: 0;
+(OK)
+operand2 := operand1 - 7;
+ID: 2; CONST: 1; OP: 1;
+(OK)
+operand3 := 1 + operand1 / 3;
+ID: 2; CONST: 2; OP: 2;
+(OK)
+operand4 := operand1 - operand3 * 2;
+ID: 3; CONST: 1; OP: 2;
+(OK)
+target := (operand4 + operand3) * 2 - (operand1 / 4 - 1) + operand2
+ID: 5; CONST: 3; OP: 6;
+(OK)
+Result ==> operand1: 12; operand2: 5; operand3: 5; operand4: 2; target: 17;","operand1 := 18;
+ID: 1; CONST: 1; OP: 0;
+(OK)
+operand2 := operand1 / 6 * 3;
+ID: 2; CONST: 2; OP: 2;
+(OK)
+operand3 := operand1 / operand2 + 4;
+ID: 3; CONST: 1; OP: 2;
+(OK)
+operand4 := operand3 * (operand1 - (1 + operand1 / 2) - (operand3 / 3));
+ID: 5; CONST: 3; OP: 6;
+(OK)
+target := operand4 - (operand2 * 3 - operand1 / 6 + 3) + (operand3 * (operand2 - 3) - (operand1 / 6 + 2))
+ID: 7; CONST: 6; OP: 11;
+(OK)
+Result ==> operand1: 18; operand2: 9; operand3: 6; operand4: 36; target: 40;","ident
+assignment_op
+const
+semi_colon
+ident
+assignment_op
+ident
+mult_operator
+const
+mult_operator
+const
+semi_colon
+ident
+assignment_op
+ident
+mult_operator
+left_paren
+ident
+add_operator
+const
+right_paren
+add_operator
+const
+semi_colon
+ident
+assignment_op
+ident
+mult_operator
+left_paren
+ident
+add_operator
+const
+right_paren
+add_operator
+left_paren
+ident
+add_operator
+const
+right_paren","operand1 := 3;
 ID: 1; CONST: 1; OP: 0;
 (OK)
 operand2 := operand1 + 2;
@@ -14,45 +82,7 @@ ID: 2; CONST: 1; OP: 1;
 target := operand1 + operand2 * 3
 ID: 3; CONST: 1; OP: 2;
 (OK)
-Result ==> operand2: Unknown; operand1: Unknown; target: Unknown;","ident
-assignment_op
-const
-semi_colon
-ident
-assignment_op
-ident
-mult_operator
-const
-mult_operator
-const
-semi_colon
-ident
-assignment_op
-ident
-mult_operator
-left_paren
-ident
-add_operator
-const
-right_paren
-add_operator
-const
-semi_colon
-ident
-assignment_op
-ident
-mult_operator
-left_paren
-ident
-add_operator
-const
-right_paren
-add_operator
-left_paren
-ident
-add_operator
-const
-right_paren","operand1 := 1;
+Result ==> operand2: Unknown; operand1: Unknown; target: Unknown;","operand1 := 1;
 ID: 1; CONST: 1; OP: 0;
 (OK)
 operand2 := (operand1 * 3) + 2;
@@ -79,31 +109,7 @@ ID: 2; CONST: 1; OP: 1;
 target := ((operand2 - 4) + operand1) * 3
 ID: 3; CONST: 2; OP: 3;
 (OK)
-Result ==> operand1: 3; operand2: 6; target: 15;","operand1 := 2;
-ID: 1; CONST: 1; OP: 0;
-(OK)
-operand2 := operand1 * 3;
-ID: 2; CONST: 1; OP: 1;
-(Warning) ""Substituting assignment operator (:=)""
-target := operand1 + operand2 * 3
-ID: 3; CONST: 1; OP: 2;
-(OK)
-Result ==> operand1: 2; operand2: 6; target: 20;","operand1 := 18;
-ID: 1; CONST: 1; OP: 0;
-(OK)
-operand2 := operand1 / 6 * 3;
-ID: 2; CONST: 2; OP: 2;
-(OK)
-operand3 := operand1 / operand2 + 4;
-ID: 3; CONST: 1; OP: 2;
-(OK)
-operand4 := operand3 * (operand1 - (1 + operand1 / 2) - (operand3 / 3));
-ID: 5; CONST: 3; OP: 6;
-(OK)
-target := operand4 - (operand2 * 3 - operand1 / 6 + 3) + (operand3 * (operand2 - 3) - (operand1 / 6 + 2))
-ID: 7; CONST: 6; OP: 11;
-(OK)
-Result ==> operand1: 18; operand2: 9; operand3: 6; operand4: 36; target: 40;","operand1 := 0;
+Result ==> operand1: 3; operand2: 6; target: 15;","operand1 := 0;
 ID: 1; CONST: 1; OP: 0;
 (OK)
 operand2 := operand1 + 1;
