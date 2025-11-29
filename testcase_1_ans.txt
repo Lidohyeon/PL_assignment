@@ -1,10 +1,16 @@
-x := 10 + 2;
-ID: 1; CONST: 2; OP: 1;
+operand1 := 12;
+ID: 1; CONST: 1; OP: 0;
 (OK)
-y := x * ( 3 + 1 );
+operand2 := operand1 - 7;
+ID: 2; CONST: 1; OP: 1;
+(OK)
+operand3 := 1 + operand1 / 3;
 ID: 2; CONST: 2; OP: 2;
 (OK)
-z := x + y / 2;
+operand4 := operand1 - operand3 * 2;
 ID: 3; CONST: 1; OP: 2;
 (OK)
-Result ==> x: 12; y: 48; z: 36;
+target := (operand4 + operand3) * 2 - (operand1 / 4 - 1) + operand2
+ID: 5; CONST: 3; OP: 6;
+(OK)
+Result ==> operand1: 12; operand2: 5; operand3: 5; operand4: 2; target: 17;

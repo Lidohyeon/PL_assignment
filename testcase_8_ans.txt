@@ -1,8 +1,10 @@
-u := 10;
-ID: 1; CONST: 1; OP: 0;
+operand1 := 3;
+ID: 1; CONST: 1; OP: 0; 
 (OK)
-v := u * 2 + u / 5;
+operand2 := operand1 * 2;
+ID: 2; CONST: 1; OP: 1;
+(OK)
+target := ((operand2 - 4) + operand1) * 3 
 ID: 3; CONST: 2; OP: 3;
-(Warning) "Eliminating duplicate operator (*)"
-(Warning) "Eliminating duplicate operator (/)"
-Result ==> u: 10; v: 22;
+(OK)
+Result ==> operand1: 3; operand2: 6; target: 15;

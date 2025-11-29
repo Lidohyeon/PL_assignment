@@ -1,7 +1,39 @@
-p := 4 + 5;
-ID: 1; CONST: 2; OP: 1;
-(Warning) "Eliminating duplicate operator (+)"
-q := p - 2;
-ID: 2; CONST: 1; OP: 1;
-(Warning) "Eliminating duplicate operator (-)"
-Result ==> p: 9; q: 7;
+ident
+assignment_op
+const
+semi_colon
+ident
+assignment_op
+ident
+mult_operator
+const
+mult_operator
+const
+semi_colon
+ident
+assignment_op
+ident
+mult_operator
+left_paren
+ident
+add_operator
+const
+right_paren
+add_operator
+const
+semi_colon
+ident
+assignment_op
+ident
+mult_operator
+left_paren
+ident
+add_operator
+const
+right_paren
+add_operator
+left_paren
+ident
+add_operator
+const
+right_paren

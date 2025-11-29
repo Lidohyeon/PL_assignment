@@ -1,10 +1,16 @@
-a := 1;
+operand1 := 18;
 ID: 1; CONST: 1; OP: 0;
 (OK)
-b := a + 2;
-ID: 2; CONST: 1; OP: 1;
+operand2 := operand1 / 6 * 3;
+ID: 2; CONST: 2; OP: 2;
 (OK)
-c := b + a + 3;
+operand3 := operand1 / operand2 + 4;
 ID: 3; CONST: 1; OP: 2;
 (OK)
-Result ==> a: 1; b: 3; c: 7;
+operand4 := operand3 * (operand1 - (1 + operand1 / 2) - (operand3 / 3));
+ID: 5; CONST: 3; OP: 6;
+(OK)
+target := operand4 - (operand2 * 3 - operand1 / 6 + 3) + (operand3 * (operand2 - 3) - (operand1 / 6 + 2))
+ID: 7; CONST: 6; OP: 11;
+(OK)
+Result ==> operand1: 18; operand2: 9; operand3: 6; operand4: 36; target: 40;

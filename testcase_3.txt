@@ -1,2 +1,4 @@
-p := 4 + + 5;
-q := p - - 2;
+operand1 := 18;
+operand2 := operand1 / 6 * 3;
+operand3 := operand1 / (operand2 - 3) + 2;
+target := operand3 * (operand1 - 15) + (operand2 + 1)

@@ -92,6 +92,7 @@ int idArray_count;
 int statementIdCount;
 int statementOpCount;
 int statementConstCount;
+bool rhsHasUnknownInStatement;
 
 bool error_occured;
 int error_count;
@@ -109,6 +110,7 @@ char *errorIdName;
 char line[1024];
 FILE *file;
 Ident idArray[256];
+bool undefinedHandled[256];
 
 char current_statement[1024];
 
@@ -320,6 +322,18 @@ Ident *isExistId(Symbol symbol) // id 중에 있는지 확인 및 그 id반환
     return NULL;
 }
 
+int getIdIndex(const char *name)
+{
+    for (int i = 0; i < idArray_count; i++)
+    {
+        if (strcmp(idArray[i].name, name) == 0)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
 void createIdArray()
 {
     for (int i = 0; i < symbol_count; i++)
@@ -331,6 +345,7 @@ void createIdArray()
             {
                 strcpy(idArray[idArray_count].name, symbolArray[i].id_name);
                 strcpy(idArray[idArray_count].value, "Unknown"); // 초기값 설정
+                undefinedHandled[idArray_count] = false;
                 idArray_count++;
             }
         }
@@ -447,6 +462,10 @@ void lexical_analysis()
 void parseProgram()
 {
     idArray_count = 0;
+    for (int i = 0; i < 256; i++)
+    {
+        undefinedHandled[i] = false;
+    }
     parseStatements();
     printIdent(idArray_count);
 }
@@ -683,12 +702,7 @@ void checkMoreStatements()
 
             printResultByLine(current_statement, statementIdCount, statementConstCount, statementOpCount);
 
-            // 에러가 2개 이상이면 printOK() 호출
-            if (error_count >= 2)
-            {
-                printOK();
-            }
-            else if (error_occured == false && opWarningCount == 0)
+            if (error_occured == false && opWarningCount == 0)
             {
                 printOK();
             }
@@ -759,42 +773,32 @@ void parseStatements()
     // 출력 형식에 맞게 세미콜론 앞의 공백을 제거
     trimSpaceBeforeSemicolon(current_statement);
 
-            // 중복 연산자가 있는 경우 current_statement에서 제거
-            for (int i = 0; i < opWarningCount; i++)
-            {
-                if (opWarningCode[i] >= 1 && opWarningCode[i] <= 4)
-                {
-                    removeDuplicateOperators(current_statement);
-                    break; // 한 번만 실행
-                }
-            }
+    // 중복 연산자가 있는 경우 current_statement에서 제거
+    for (int i = 0; i < opWarningCount; i++)
+    {
+        if (opWarningCode[i] >= 1 && opWarningCode[i] <= 4)
+        {
+            removeDuplicateOperators(current_statement);
+            break; // 한 번만 실행
+        }
+    }
 
-            // assignment operator 치환이 필요한 경우
-            for (int i = 0; i < opWarningCount; i++)
-            {
-                if (opWarningCode[i] == 5)
-                {
-                    substituteAssignmentOperator(current_statement);
-                    break; // 한 번만 실행
-                }
-            }
+    // assignment operator 치환이 필요한 경우
+    for (int i = 0; i < opWarningCount; i++)
+    {
+        if (opWarningCode[i] == 5)
+        {
+            substituteAssignmentOperator(current_statement);
+            break; // 한 번만 실행
+        }
+    }
 
-            // 출력 형식에 맞게 세미콜론 앞의 공백을 제거
-            trimSpaceBeforeSemicolon(current_statement);
+    // 출력 형식에 맞게 세미콜론 앞의 공백을 제거
+    trimSpaceBeforeSemicolon(current_statement);
 
     printResultByLine(current_statement, statementIdCount, statementConstCount, statementOpCount);
 
-    // 에러가 2개 이상이면 printOK() 호출
-    if (error_count >= 2)
-    {
-        printOK();
-        checkMoreStatements();
-        if (fgets(line, sizeof(line), file) != NULL)
-        {
-            parseStatements();
-        }
-    }
-    else if (error_occured == false && opWarningCount == 0)
+    if (error_occured == false && opWarningCount == 0)
     {
         printOK();
         checkMoreStatements();
@@ -844,6 +848,9 @@ void parseStatement()
     opWarnigCode = 0;
     opWarningCount = 0;
     error_count = 0;
+    rhsHasUnknownInStatement = false;
+
+    int idIndex;
 
     Symbol *sym = getCurrentToken();
 
@@ -865,7 +872,7 @@ void parseStatement()
         {
             moveToNextToken();
             int result = parseExpression();
-            if (error_occured == false)
+            if (error_occured == false && rhsHasUnknownInStatement == false)
             {                                     // 반환값을 변수에 저장
                 sprintf(id->value, "%d", result); // 정수를 문자열로 변환하여 할당
             }
@@ -873,13 +880,15 @@ void parseStatement()
             {
                 sprintf(id->value, "%s", "Unknown");
             }
+            idIndex = getIdIndex(id->name);
+            undefinedHandled[idIndex] = true;
             return;
         }
         else
         {
             opWarningCode[opWarningCount++] = 5;
             int result = parseExpression(); // 반환값을 변수에 저장
-            if (error_occured == false)
+            if (error_occured == false && rhsHasUnknownInStatement == false)
             {                                     // 반환값을 변수에 저장
                 sprintf(id->value, "%d", result); // 정수를 문자열로 변환하여 할당
             }
@@ -887,6 +896,8 @@ void parseStatement()
             {
                 sprintf(id->value, "%s", "Unknown");
             }
+            idIndex = getIdIndex(id->name);
+            undefinedHandled[idIndex] = true;
             return;
         }
     }
@@ -895,7 +906,7 @@ void parseStatement()
         opWarningCode[opWarningCount++] = 5;
         moveToNextToken();
         int result = parseExpression(); // 반환값 = parseExpression();   // 반환값을 변수에 저장
-        if (error_occured == false)
+        if (error_occured == false && rhsHasUnknownInStatement == false)
         {                                     // 반환값을 변수에 저장
             sprintf(id->value, "%d", result); // 정수를 문자열로 변환하여 할당
         }
@@ -903,6 +914,8 @@ void parseStatement()
         {
             sprintf(id->value, "%s", "Unknown");
         } // 정수를 문자열로 변환하여 할당
+        idIndex = getIdIndex(id->name);
+        undefinedHandled[idIndex] = true;
         return;
     }
     else
@@ -1011,11 +1024,21 @@ int parseFactor()
     {
         statementIdCount++;
         Ident *id = isExistId(*getCurrentToken());
-        if (strlen(id->value) == 0 || strcmp(id->value, "Unknown") == 0)
+        int idIndex = getIdIndex(id->name);
+        bool valueIsUnknown = (strlen(id->value) == 0 || strcmp(id->value, "Unknown") == 0);
+
+        if (valueIsUnknown)
+        {
+            rhsHasUnknownInStatement = true;
+        }
+
+        if (valueIsUnknown &&
+            idIndex >= 0 && undefinedHandled[idIndex] == false)
         {
             errorIdName = id->name;
             error_occured = true;
             error_count++;
+            undefinedHandled[idIndex] = true;
             moveToNextToken();
             return 0;
         }

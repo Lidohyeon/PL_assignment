@@ -1,71 +1,150 @@
 ﻿Name,Language,Result1,Result2,Result3,Result4,Result5,Result6,Result7,Result8,Result9,Result10,Score1,Score2,Score3,Score4,Score5,Score6,Score7,Score8,Score9,Score10
-20224264,C,"x := 10 + 2;
-ID: 1; CONST: 2; OP: 1;
-(OK)
-y := x * ( 3 + 1 );
-ID: 2; CONST: 2; OP: 2;
-(OK)
-z := x + y / 2;
-ID: 3; CONST: 1; OP: 2;
-(OK)
-Result ==> x: 12; y: 48; z: 36;","a := 1;
+20224264,C,"operand1 := 12;
 ID: 1; CONST: 1; OP: 0;
 (OK)
-b := a + 2;
+operand2 := operand1 - 7;
 ID: 2; CONST: 1; OP: 1;
 (OK)
-c := b + a + 3;
+operand3 := 1 + operand1 / 3;
+ID: 2; CONST: 2; OP: 2;
+(OK)
+operand4 := operand1 - operand3 * 2;
 ID: 3; CONST: 1; OP: 2;
 (OK)
-Result ==> a: 1; b: 3; c: 7;","ident
+target := (operand4 + operand3) * 2 - (operand1 / 4 - 1) + operand2
+ID: 5; CONST: 3; OP: 6;
+(OK)
+Result ==> operand1: 12; operand2: 5; operand3: 5; operand4: 2; target: 17;","operand1 := 18;
+ID: 1; CONST: 1; OP: 0;
+(OK)
+operand2 := operand1 / 6 * 3;
+ID: 2; CONST: 2; OP: 2;
+(OK)
+operand3 := operand1 / operand2 + 4;
+ID: 3; CONST: 1; OP: 2;
+(OK)
+operand4 := operand3 * (operand1 - (1 + operand1 / 2) - (operand3 / 3));
+ID: 5; CONST: 3; OP: 6;
+(OK)
+target := operand4 - (operand2 * 3 - operand1 / 6 + 3) + (operand3 * (operand2 - 3) - (operand1 / 6 + 2))
+ID: 7; CONST: 6; OP: 11;
+(OK)
+Result ==> operand1: 18; operand2: 9; operand3: 6; operand4: 36; target: 40;","ident
 assignment_op
 const
+semi_colon
+ident
+assignment_op
+ident
+mult_operator
+const
+mult_operator
+const
+semi_colon
+ident
+assignment_op
+ident
+mult_operator
+left_paren
+ident
+add_operator
+const
+right_paren
 add_operator
 const
 semi_colon
 ident
 assignment_op
 ident
+mult_operator
+left_paren
+ident
 add_operator
 const
-semi_colon","rate := 7 + 3;
-ID: 1; CONST: 2; OP: 1;
-(Warning) ""Substituting assignment operator (:=)""
-total := rate + 1;
-ID: 2; CONST: 1; OP: 1;
-(OK)
-Result ==> rate: 10; total: 11;","result := alpha + 3;
-ID: 2; CONST: 1; OP: 1;
-(Error) ""referring to undefined identifiers(alpha)""
-Result ==> result: Unknown; alpha: Unknown;","summary := first + second - third;
-ID: 4; CONST: 0; OP: 2;
-(OK)
-Result ==> summary: Unknown; first: Unknown; second: Unknown; third: Unknown;","calc := (2 + 3) * 4 / 2;
-ID: 1; CONST: 4; OP: 3;
-(OK)
-adjusted := calc + (calc - 3);
-ID: 3; CONST: 1; OP: 2;
-(OK)
-Result ==> calc: 10; adjusted: 17;","u := 10;
+right_paren
+add_operator
+left_paren
+ident
+add_operator
+const
+right_paren","operand1 := 3;
 ID: 1; CONST: 1; OP: 0;
 (OK)
-v := u * 2 + u / 5;
-ID: 3; CONST: 2; OP: 3;
-(Warning) ""Eliminating duplicate operator (*)""
-(Warning) ""Eliminating duplicate operator (/)""
-Result ==> u: 10; v: 22;","m := 5 -3 + 1;
-ID: 1; CONST: 3; OP: 2;
-(Warning) ""Eliminating duplicate operator (-)""
-n := (m + 4) / 2;
-ID: 2; CONST: 2; OP: 2;
+operand2 := operand1 + 2;
+ID: 2; CONST: 1; OP: 1;
 (OK)
-Result ==> m: 3; n: 3;","foo := 1 + 2;
-ID: 1; CONST: 2; OP: 1;
-(OK)
-bar := foo + 3 / 1;
-ID: 2; CONST: 2; OP: 2;
-(Warning) ""Eliminating duplicate operator (/)""
-baz := (bar + foo) -1;
+target := operand1 + operand2 * 3
 ID: 3; CONST: 1; OP: 2;
+(OK)
+Result ==> operand1: 3; operand2: 5; target: 18;","operand2 := operand1 + 2;
+ID: 2; CONST: 1; OP: 1;
+(Error) ""referring to undefined identifiers(operand1)""
+target := operand1 + operand2 * 3
+ID: 3; CONST: 1; OP: 2;
+(OK)
+Result ==> operand2: Unknown; operand1: Unknown; target: Unknown;","operand1 := 1;
+ID: 1; CONST: 1; OP: 0;
+(OK)
+operand2 := (operand1 * 3) + 2;
+ID: 2; CONST: 2; OP: 2;
+(OK)
+target := operand1 + operand2 * 3
+ID: 3; CONST: 1; OP: 2;
+(OK)
+Result ==> operand1: 1; operand2: 5; target: 16;","operand1 := 3;
+ID: 1; CONST: 1; OP: 0;
+(OK)
+operand2 := operand1 + 2;
+ID: 2; CONST: 1; OP: 1;
+(Warning) ""Eliminating duplicate operator (+)""
+target := operand1 + operand2 * 3
+ID: 3; CONST: 1; OP: 2;
+(OK)
+Result ==> operand1: 3; operand2: 5; target: 18;","operand1 := 3;
+ID: 1; CONST: 1; OP: 0;
+(OK)
+operand2 := operand1 * 2;
+ID: 2; CONST: 1; OP: 1;
+(OK)
+target := ((operand2 - 4) + operand1) * 3
+ID: 3; CONST: 2; OP: 3;
+(OK)
+Result ==> operand1: 3; operand2: 6; target: 15;","operand1 := 0;
+ID: 1; CONST: 1; OP: 0;
+(OK)
+operand2 := operand1 + 1;
+ID: 2; CONST: 1; OP: 1;
+(Warning) ""Eliminating duplicate operator (+)""
+operand3 := 4 - 2;
+ID: 1; CONST: 2; OP: 1;
 (Warning) ""Eliminating duplicate operator (-)""
-Result ==> foo: 3; bar: 6; baz: 8;",100,100,0,100,100,100,100,100,100,100
+operand4 := 3 * 1;
+ID: 1; CONST: 2; OP: 1;
+(Warning) ""Eliminating duplicate operator (*)""
+operand5 := 16 / 4;
+ID: 1; CONST: 2; OP: 1;
+(Warning) ""Eliminating duplicate operator (/)""
+operand6 := 2024;
+ID: 1; CONST: 1; OP: 0;
+(Warning) ""Substituting assignment operator (:=)""
+operand7 := operand1 + operand2;
+ID: 3; CONST: 0; OP: 1;
+(Warning) ""Eliminating duplicate operator (+)""
+operand8 := operand3 * (operand4 - operand5)
+ID: 4; CONST: 0; OP: 2;
+(Warning) ""Eliminating duplicate operator (*)""
+(Warning) ""Eliminating duplicate operator (-)""
+Result ==> operand1: 0; operand2: 1; operand3: 2; operand4: 3; operand5: 4; operand6: 2024; operand7: 1; operand8: -2;","Value1 := 1;
+ID: 1; CONST: 1; OP: 0;
+(OK)
+AddResult := Value1 + Value2;
+ID: 3; CONST: 0; OP: 1;
+(Error) ""referring to undefined identifiers(Value2)""
+MinusResult := Value1 - 3;
+ID: 2; CONST: 1; OP: 1;
+(Warning) ""Substituting assignment operator (:=)""
+(Warning) ""Eliminating duplicate operator (-)""
+MultiplyResult := Value1 * (Value1 + 1)
+ID: 3; CONST: 1; OP: 2;
+(OK)
+Result ==> Value1: 1; AddResult: Unknown; Value2: Unknown; MinusResult: -2; MultiplyResult: 2;",100,100,100,100,100,100,100,100,100,100
