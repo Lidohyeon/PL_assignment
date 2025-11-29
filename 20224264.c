@@ -111,6 +111,7 @@ char line[1024];
 FILE *file;
 Ident idArray[256];
 bool undefinedHandled[256];
+bool assignedBefore[256];
 
 char current_statement[1024];
 
@@ -248,6 +249,8 @@ void removeDuplicateOperators(char *input_line);
 
 void substituteAssignmentOperator(char *input_line);
 
+void normalizeStatementSpacing(char *input_line);
+
 Symbol *getCurrentToken()
 {
     return &symbolArray[symbol_current];
@@ -334,6 +337,18 @@ int getIdIndex(const char *name)
     return -1;
 }
 
+int getIdIndex(const char *name)
+{
+    for (int i = 0; i < idArray_count; i++)
+    {
+        if (strcmp(idArray[i].name, name) == 0)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
 void createIdArray()
 {
     for (int i = 0; i < symbol_count; i++)
@@ -346,6 +361,7 @@ void createIdArray()
                 strcpy(idArray[idArray_count].name, symbolArray[i].id_name);
                 strcpy(idArray[idArray_count].value, "Unknown"); // 초기값 설정
                 undefinedHandled[idArray_count] = false;
+                assignedBefore[idArray_count] = false;
                 idArray_count++;
             }
         }
@@ -465,9 +481,11 @@ void parseProgram()
     for (int i = 0; i < 256; i++)
     {
         undefinedHandled[i] = false;
+        assignedBefore[i] = false;
     }
     parseStatements();
     printIdent(idArray_count);
+    printf("\n");
 }
 
 int statement_start_pos = 0;
@@ -645,6 +663,118 @@ void trimSpaceBeforeSemicolon(char *stmt)
     }
 }
 
+// Normalize spacing so operators have single spaces around them, parentheses
+// are tight to their contents, and semicolons do not have leading whitespace.
+void normalizeStatementSpacing(char *input_line)
+{
+    char normalized[1024];
+    int write_pos = 0;
+
+    for (int i = 0; input_line[i] != '\0';)
+    {
+        if (isspace((unsigned char)input_line[i]))
+        {
+            i++;
+            continue;
+        }
+
+        char token[128] = {0};
+
+        if (isalnum((unsigned char)input_line[i]))
+        {
+            int tpos = 0;
+            while (isalnum((unsigned char)input_line[i]))
+            {
+                if (tpos < (int)sizeof(token) - 1)
+                {
+                    token[tpos++] = input_line[i];
+                }
+                i++;
+            }
+            token[tpos] = '\0';
+        }
+        else if (input_line[i] == ':' && input_line[i + 1] == '=')
+        {
+            token[0] = ':';
+            token[1] = '=';
+            token[2] = '\0';
+            i += 2;
+        }
+        else
+        {
+            token[0] = input_line[i];
+            token[1] = '\0';
+            i++;
+        }
+
+        char last_char = (write_pos > 0) ? normalized[write_pos - 1] : '\0';
+
+        if (token[0] == ';')
+        {
+            while (write_pos > 0 && isspace((unsigned char)normalized[write_pos - 1]))
+            {
+                write_pos--;
+            }
+            normalized[write_pos++] = ';';
+            continue;
+        }
+
+        if (token[0] == ')')
+        {
+            while (write_pos > 0 && isspace((unsigned char)normalized[write_pos - 1]))
+            {
+                write_pos--;
+            }
+            normalized[write_pos++] = ')';
+            continue;
+        }
+
+        if (token[0] == '(')
+        {
+            if (write_pos > 0 && last_char != ' ' && last_char != '(')
+            {
+                normalized[write_pos++] = ' ';
+            }
+            normalized[write_pos++] = '(';
+            continue;
+        }
+
+        bool is_operator = (strcmp(token, ":=") == 0 || token[0] == '+' || token[0] == '-' ||
+                             token[0] == '*' || token[0] == '/');
+
+        if (is_operator)
+        {
+            if (write_pos > 0 && normalized[write_pos - 1] != ' ' && normalized[write_pos - 1] != '(')
+            {
+                normalized[write_pos++] = ' ';
+            }
+            for (int k = 0; token[k] != '\0'; k++)
+            {
+                normalized[write_pos++] = token[k];
+            }
+            normalized[write_pos++] = ' ';
+            continue;
+        }
+
+        if (write_pos > 0 && normalized[write_pos - 1] != '(' && normalized[write_pos - 1] != ' ')
+        {
+            normalized[write_pos++] = ' ';
+        }
+        for (int k = 0; token[k] != '\0'; k++)
+        {
+            normalized[write_pos++] = token[k];
+        }
+    }
+
+    while (write_pos > 0 && isspace((unsigned char)normalized[write_pos - 1]))
+    {
+        write_pos--;
+    }
+
+    normalized[write_pos] = '\0';
+    strcpy(input_line, normalized);
+}
+
 void checkMoreStatements()
 {
     if (symbol_current < symbol_count && getCurrentToken()->symbol_type == SEMI_COLON)
@@ -674,9 +804,6 @@ void checkMoreStatements()
             // 토큰 위치를 기반으로 현재 statement를 추출
             extractCurrentStatement(line, statement_start, statement_end);
 
-            // 출력 형식에 맞게 세미콜론 앞의 공백을 제거
-            trimSpaceBeforeSemicolon(current_statement);
-
             // 중복 연산자가 있는 경우 current_statement에서 제거
             for (int i = 0; i < opWarningCount; i++)
             {
@@ -699,6 +826,8 @@ void checkMoreStatements()
 
             // 출력 형식에 맞게 세미콜론 앞의 공백을 제거
             trimSpaceBeforeSemicolon(current_statement);
+
+            normalizeStatementSpacing(current_statement);
 
             printResultByLine(current_statement, statementIdCount, statementConstCount, statementOpCount);
 
@@ -773,28 +902,30 @@ void parseStatements()
     // 출력 형식에 맞게 세미콜론 앞의 공백을 제거
     trimSpaceBeforeSemicolon(current_statement);
 
-    // 중복 연산자가 있는 경우 current_statement에서 제거
-    for (int i = 0; i < opWarningCount; i++)
-    {
-        if (opWarningCode[i] >= 1 && opWarningCode[i] <= 4)
-        {
-            removeDuplicateOperators(current_statement);
-            break; // 한 번만 실행
-        }
-    }
+    normalizeStatementSpacing(current_statement);
 
-    // assignment operator 치환이 필요한 경우
-    for (int i = 0; i < opWarningCount; i++)
-    {
-        if (opWarningCode[i] == 5)
-        {
-            substituteAssignmentOperator(current_statement);
-            break; // 한 번만 실행
-        }
-    }
+            // 중복 연산자가 있는 경우 current_statement에서 제거
+            for (int i = 0; i < opWarningCount; i++)
+            {
+                if (opWarningCode[i] >= 1 && opWarningCode[i] <= 4)
+                {
+                    removeDuplicateOperators(current_statement);
+                    break; // 한 번만 실행
+                }
+            }
 
-    // 출력 형식에 맞게 세미콜론 앞의 공백을 제거
-    trimSpaceBeforeSemicolon(current_statement);
+            // assignment operator 치환이 필요한 경우
+            for (int i = 0; i < opWarningCount; i++)
+            {
+                if (opWarningCode[i] == 5)
+                {
+                    substituteAssignmentOperator(current_statement);
+                    break; // 한 번만 실행
+                }
+            }
+
+            // 출력 형식에 맞게 세미콜론 앞의 공백을 제거
+            trimSpaceBeforeSemicolon(current_statement);
 
     printResultByLine(current_statement, statementIdCount, statementConstCount, statementOpCount);
 
@@ -804,9 +935,9 @@ void parseStatements()
         checkMoreStatements();
         if (fgets(line, sizeof(line), file) != NULL)
         {
-            parseStatements();
-        }
+        parseStatements();
     }
+}
     else if (error_occured)
     {
         printIDError(errorIdName);
@@ -862,6 +993,11 @@ void parseStatement()
     }
     statementIdCount++;
     Ident *id = isExistId(*sym);
+    int lhsIndex = getIdIndex(id->name);
+    if (lhsIndex >= 0)
+    {
+        assignedBefore[lhsIndex] = true;
+    }
 
     // id가 null인지는 확인할 필요가 없다 이미 전부 createIdarray를 통해 모든 Id를 만들었기때문에.
     moveToNextToken();
@@ -1025,15 +1161,9 @@ int parseFactor()
         statementIdCount++;
         Ident *id = isExistId(*getCurrentToken());
         int idIndex = getIdIndex(id->name);
-        bool valueIsUnknown = (strlen(id->value) == 0 || strcmp(id->value, "Unknown") == 0);
-
-        if (valueIsUnknown)
-        {
-            rhsHasUnknownInStatement = true;
-        }
-
-        if (valueIsUnknown &&
-            idIndex >= 0 && undefinedHandled[idIndex] == false)
+        if ((strlen(id->value) == 0 || strcmp(id->value, "Unknown") == 0) &&
+            idIndex >= 0 && undefinedHandled[idIndex] == false &&
+            assignedBefore[idIndex] == false)
         {
             errorIdName = id->name;
             error_occured = true;

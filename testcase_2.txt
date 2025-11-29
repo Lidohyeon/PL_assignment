@@ -1,5 +1,1 @@
-operand1 := 18;
-operand2 := operand1 / 6 * 3;
-operand3 := operand1 / operand2 + 4;
-operand4 := operand3 * (operand1 - (1 + operand1 / 2) - (operand3 / 3));
-target := operand4 - (operand2 * 3 - operand1 / 6 + 3) + (operand3 * (operand2 - 3) - (operand1 / 6 + 2))
+a := 1; b := a + 2 ; c := b + a + 3;
