@@ -1,7 +1,2 @@
-operand1 := 0;
-operand2 := operand1 + + 1;
-operand3 := 4 - - 2;
-operand4 := 3 * * 1;
-operand5 := 16 / / 4; operand6 = 2024;
-operand7 := operand1 + + operand2;
-operand8 := operand3 * * (operand4 - - operand5)
+m := 5 - -3 + 1 ;
+n := (m + 4) / 2 ;
